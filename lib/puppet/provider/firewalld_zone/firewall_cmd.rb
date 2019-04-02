@@ -54,8 +54,13 @@ Puppet::Type.type(:firewalld_zone).provide(
     new_interfaces ||= []
     cur_interfaces = self.interfaces
     (new_interfaces - cur_interfaces).each do |i|
-      self.debug("Adding interface '#{i}' to zone #{@resource[:name]}")
-      execute_firewall_cmd(['--add-interface', i])
+      if execute_firewall_cmd(['--get-zone-of-interface', i], @resource[:name], true, false).chomp == 'no zone'
+        self.debug("Adding interface '#{i}' to zone #{@resource[:name]}")
+        execute_firewall_cmd(['--add-interface', i])
+      else
+        self.debug("Changing interface '#{i}' to zone #{@resource[:name]}")
+        execute_firewall_cmd(['--change-interface', i])
+      end
     end
     (cur_interfaces - new_interfaces).each do |i|
       self.debug("Removing interface '#{i}' from zone #{@resource[:name]}")
